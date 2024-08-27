@@ -196,6 +196,7 @@ def run_optimizer(roster_data, scoring, players_df):
             new_entry = pd.DataFrame([{'Budget spent': spent_budget, 'Points per Game': points_game}])
             history = pd.concat([history, new_entry], ignore_index=True)
             new_change = pd.DataFrame([max_marginal_improvement_row])
+            st.write(roster)
             new_roster = pd.DataFrame([roster])
             roster_history = pd.concat([roster_history, new_roster], ignore_index=True)
             #apply sensitivity analysis
