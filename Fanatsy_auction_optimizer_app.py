@@ -201,13 +201,14 @@ def run_optimizer(roster_data, scoring, players_df):
         for col in ['Player', 'Avg. Salary (AVG)', 'Proj 23']:
             column_dict[col].extend(df[col])
     roster_evolution = pd.DataFrame(column_dict)
+    return roster
 
 # Button to run the program
 if st.button('Run Program'):
     # Process data based on inputs
-    run_optimizer(roster_data, scoring)
+    result_df = run_optimizer(roster_data, scoring)
     st.write('Results:')
-    #st.dataframe(result_df, width=700, height=300)
+    st.dataframe(result_df, width=700, height=300)
 
 # Option to reset or change inputs
 if st.button('Reset'):
