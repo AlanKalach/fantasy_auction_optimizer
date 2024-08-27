@@ -163,7 +163,7 @@ def run_optimizer(roster_data, scoring, players_df):
             max_row_name = matrix_df.index[max_row_index]
             max_col_name = matrix_df.columns[max_col_index]
             # Create a DataFrame to store the result (for each position which is the maximum trade)
-            result_df = result_df.append({'Marginal Improvement': max_value, 'New Player': max_row_name, 'Old Player': max_col_name, 'Pos': pos}, ignore_index=True)
+            #result_df = result_df.append({'Marginal Improvement': max_value, 'New Player': max_row_name, 'Old Player': max_col_name, 'Pos': pos}, ignore_index=True)
             #find best marginal improvement
             max_marginal_improvement_row = result_df.loc[result_df['Marginal Improvement'].idxmax()]
             #sotre matrix_df for sensitivity purposes
