@@ -29,7 +29,7 @@ starting_TEs = st.number_input("TEs", min_value=1, max_value=2, step=1)
 
 st.markdown("### Scoring Settings")
 pass_td = st.number_input("Pass TD Points", min_value=4, max_value=6, step=1)
-rec = st.number_input("Points per Rec", min_value=0, max_value=1, step=1)
+rec = st.number_input("Points per Rec", min_value=0, max_value=1, step=0.5)
 
 
 roster_data = pd.DataFrame({
@@ -214,26 +214,24 @@ def run_optimizer(roster_data, scoring, players_df):
         for col in ['Player', 'Avg. Salary (AVG)', 'Proj 23']:
             column_dict[col].extend(df[col])
     roster_evolution = pd.DataFrame(column_dict)
-    return roster
+    return roster, points_game, spent_budget
     
 
 # Button to run the program
 if st.button('Run Program'):
     # Process data based on inputs
-    result_df = run_optimizer(roster_data, scoring, players_df)
-    # Calculate the sum of each column
-    sum_row = result_df.sum()
+    result_df, points_game, spent_budget = run_optimizer(roster_data, scoring, players_df)
 
     # Add the sum row to the DataFrame
-    sum_row_df = pd.DataFrame(sum_row).T  # Convert to DataFrame and transpose
-    sum_row_df.index = ['Total']  # Set the index to 'Total' for clarity
-    result_df = pd.concat([result_df, sum_row_df])
     result_df = result_df.rename(columns={"Proj 23": "Projected Points"})
     result_df = result_df.rename(columns={"Avg. Salary (AVG)": "Avg. Salary"})
     columns_to_display = ["Player", "Pos", "Projected Points", "Avg. Salary"]
     filtered_results=result_df[columns_to_display]
-    st.write('Results:')
-    st.dataframe(filtered_results, width=700, height=500)
+    st.write('Optimal Roster:')
+    st.dataframe(filtered_results, width=700, height=400)
+    st.write(f'Points per Game: {points_game}')
+    st.write(f'Budget Spent: {spent_budget}')
+ 
 
 
 
