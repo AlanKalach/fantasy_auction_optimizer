@@ -29,8 +29,7 @@ starting_TEs = st.number_input("TEs", min_value=1, max_value=2, step=1)
 
 st.markdown("### Scoring Settings")
 pass_td = st.number_input("Pass TD Points", min_value=4, max_value=6, step=1)
-rec = st.number_input("Points per Rec", min_value=0, max_value=1, step=0.5, format="%0.1f")
-
+rec = st.number_input("Points per Rec", min_value=0.0, max_value=1.0, step=0.1, format="%0.1f")
 
 roster_data = pd.DataFrame({
     'Number': [starting_QBs, starting_RBs, starting_WRs, starting_TEs, 1, 1],
