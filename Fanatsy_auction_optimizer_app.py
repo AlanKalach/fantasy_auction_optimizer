@@ -17,7 +17,7 @@ import streamlit as st
 players_df = pd.read_excel("fantasy_app.xlsx")
 #Define roster size
 
-st.title('Fantasy Football Optimizer')
+st.title('Fantasy Football Optimizer 2024 Season by Alan Kalach')
 
 st.markdown("### Total Roster Size")
 roster_size = st.number_input("Total Roster Size", min_value=14, max_value=20, step=1)
@@ -228,7 +228,7 @@ if st.button('Run Program'):
     filtered_results=result_df[columns_to_display]
     st.write('Optimal Roster:')
     st.dataframe(filtered_results, width=700, height=400)
-    st.write(f'Points per Game: {points_game}')
+    st.write(f'Points per Game: {points_game:.2f}')
     st.write(f'Budget Spent: {spent_budget}')
  
 
