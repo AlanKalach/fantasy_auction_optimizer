@@ -133,8 +133,12 @@ def run_optimizer(roster_data, scoring, players_df):
     available_budget = 200 - spent_budget
     
     #store iteration information
-    history = history.append(pd.Series((spent_budget, points_game), index=['Budget spent', 'Points per Game']), ignore_index=True)
-    roster_history.append(roster.copy())
+    # Update history DataFrame
+    new_row = pd.DataFrame([[spent_budget, points_game]], columns=['Budget spent', 'Points per Game'])
+    history = pd.concat([history, new_row], ignore_index=True)
+    
+    # Update roster_history list
+    roster_history += [roster.copy()] 
     
     #Iteration 1-n -------------------------------------------------------------------------
     count = 1
@@ -162,8 +166,14 @@ def run_optimizer(roster_data, scoring, players_df):
             # Get the names of the row and column for the maximum value
             max_row_name = matrix_df.index[max_row_index]
             max_col_name = matrix_df.columns[max_col_index]
-            # Create a DataFrame to store the result (for each position which is the maximum trade)
-            result_df = result_df.append({'Marginal Improvement': max_value, 'New Player': max_row_name, 'Old Player': max_col_name, 'Pos': pos}, ignore_index=True)
+            # Convert the new row into a DataFrame and concatenate it with the existing result_df DataFrame
+            new_row = pd.DataFrame([{
+                'Marginal Improvement': max_value,
+                'New Player': max_row_name,
+                'Old Player': max_col_name,
+                'Pos': pos
+            }])
+            result_df = pd.concat([result_df, new_row], ignore_index=True)
             #find best marginal improvement
             max_marginal_improvement_row = result_df.loc[result_df['Marginal Improvement'].idxmax()]
             #sotre matrix_df for sensitivity purposes
@@ -183,9 +193,12 @@ def run_optimizer(roster_data, scoring, players_df):
             spent_budget = roster['Avg. Salary (AVG)'].sum() + (15-roster_data['Number'].sum())
             available_budget = 200 - spent_budget
             #store iteration information
-            history = history.append(pd.Series((spent_budget, points_game), index=['Budget spent', 'Points per Game']), ignore_index=True)
-            change_history.append(max_marginal_improvement_row.copy())
-            roster_history.append(roster.copy())
+            new_entry = pd.DataFrame([{'Budget spent': spent_budget, 'Points per Game': points_game}])
+            history = pd.concat([history, new_entry], ignore_index=True)
+            new_change = pd.DataFrame([max_marginal_improvement_row])
+            change_history = pd.concat([change_history, new_change], ignore_index=True)
+            new_roster = pd.DataFrame([roster])
+            roster_history = pd.concat([roster_history, new_roster], ignore_index=True)
             #apply sensitivity analysis
             for key, dataframe in matrix_storage.items():
                 players_df_hardcopy_2= sensitivity(dataframe, players_df_hardcopy_2, max_marginal_improvement_row, count)
