@@ -139,7 +139,7 @@ def run_optimizer(roster_data, scoring, players_df):
     
     # Update roster_history list
     roster_history += [roster.copy()] 
- """
+""" 
     #Iteration 1-n -------------------------------------------------------------------------
     count = 1
     iterate = True 
@@ -216,7 +216,7 @@ def run_optimizer(roster_data, scoring, players_df):
         for col in ['Player', 'Avg. Salary (AVG)', 'Proj 23']:
             column_dict[col].extend(df[col])
     roster_evolution = pd.DataFrame(column_dict)
- """
+"""
     return roster
 
 # Button to run the program
