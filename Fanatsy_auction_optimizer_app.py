@@ -183,9 +183,9 @@ def run_optimizer(roster_data, scoring, players_df):
             spent_budget = roster['Avg. Salary (AVG)'].sum() + (15-roster_data['Number'].sum())
             available_budget = 200 - spent_budget
             #store iteration information
-            history = history.append(pd.Series((spent_budget, points_game), index=['Budget spent', 'Points per Game']), ignore_index=True)
-            change_history.append(max_marginal_improvement_row.copy())
-            roster_history.append(roster.copy())
+            #history = history.append(pd.Series((spent_budget, points_game), index=['Budget spent', 'Points per Game']), ignore_index=True)
+            #change_history.append(max_marginal_improvement_row.copy())
+            #roster_history.append(roster.copy())
             #apply sensitivity analysis
             for key, dataframe in matrix_storage.items():
                 players_df_hardcopy_2= sensitivity(dataframe, players_df_hardcopy_2, max_marginal_improvement_row, count)
