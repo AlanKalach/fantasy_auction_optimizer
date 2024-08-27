@@ -27,7 +27,7 @@ starting_RBs = st.number_input("RBs", min_value=2, max_value=4, step=1)
 starting_WRs = st.number_input("WRs", min_value=2, max_value=4, step=1)
 starting_TEs = st.number_input("TEs", min_value=1, max_value=2, step=1)
 
-
+st.markdown("### Scoring Settings")
 pass_td = st.number_input("Pass TD Points", min_value=4, max_value=6, step=1)
 rec = st.number_input("Points per Rec", min_value=0, max_value=1, step=0.5)
 
