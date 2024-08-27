@@ -139,6 +139,7 @@ def run_optimizer(roster_data, scoring, players_df):
     
     # Update roster_history list
     roster_history += [roster.copy()] 
+    return roster
 """ 
     #Iteration 1-n -------------------------------------------------------------------------
     count = 1
@@ -217,7 +218,7 @@ def run_optimizer(roster_data, scoring, players_df):
             column_dict[col].extend(df[col])
     roster_evolution = pd.DataFrame(column_dict)
 """
-    return roster
+    
 
 # Button to run the program
 if st.button('Run Program'):
