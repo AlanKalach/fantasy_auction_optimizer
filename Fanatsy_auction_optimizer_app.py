@@ -133,7 +133,7 @@ def run_optimizer(roster_data, scoring, players_df):
     available_budget = 200 - spent_budget
     
     #store iteration information
-    history = history.append(pd.Series((spent_budget, points_game), index=['Budget spent', 'Points per Game']), ignore_index=True)
+    #history = history.append(pd.Series((spent_budget, points_game), index=['Budget spent', 'Points per Game']), ignore_index=True)
     roster_history.append(roster.copy())
     
     #Iteration 1-n -------------------------------------------------------------------------
