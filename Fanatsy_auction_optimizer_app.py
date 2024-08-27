@@ -226,8 +226,16 @@ if st.button('Run Program'):
     result_df = result_df.rename(columns={"Avg. Salary (AVG)": "Avg. Salary"})
     columns_to_display = ["Player", "Pos", "Projected Points", "Avg. Salary"]
     filtered_results=result_df[columns_to_display]
+    # Define the custom order for the 'Pos' field
+    position_order = {'QB': 1, 'RB': 2, 'WR': 3, 'TE': 4, 'K': 5, 'DEF': 6}
+    # Add a new column to sort by custom position order
+    filtered_results['Pos Order'] = filtered_results['Pos'].map(position_order)
+    # Sort the DataFrame by 'Pos Order' and 'Projected Points'
+    results_sorted = filtered_results.sort_values(by=['Pos Order', 'Projected Points'], ascending=[True, False])
+    # Drop the temporary 'Pos Order' column
+    results_sorted = results_sorted.drop(columns=['Pos Order'])
     st.write('Optimal Roster:')
-    st.dataframe(filtered_results, width=700, height=400)
+    st.dataframe(results_sorted, width=700, height=400)
     st.write(f'Points per Game: {points_game:.2f}')
     st.write(f'Budget Spent: {spent_budget}')
  
