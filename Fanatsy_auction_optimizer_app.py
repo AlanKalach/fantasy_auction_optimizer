@@ -221,10 +221,19 @@ def run_optimizer(roster_data, scoring, players_df):
 if st.button('Run Program'):
     # Process data based on inputs
     result_df = run_optimizer(roster_data, scoring, players_df)
-    st.write('Results:')
-    st.dataframe(result_df, width=700, height=300)
+    # Calculate the sum of each column
+    sum_row = result_df.sum()
 
-# Option to reset or change inputs
-if st.button('Reset'):
-    st.experimental_rerun()
+    # Add the sum row to the DataFrame
+    sum_row_df = pd.DataFrame(sum_row).T  # Convert to DataFrame and transpose
+    sum_row_df.index = ['Total']  # Set the index to 'Total' for clarity
+    result_df = pd.concat([result_df, sum_row_df])
+    result_df = result_df.rename(columns={"Proj 23": "Projected Points"})
+    result_df = result_df.rename(columns={"Avg. Salary (AVG)": "Avg. Salary"})
+    columns_to_display = ["Player", "Pos", "Projected Points", "Avg. Salary"]
+    filtered_results=result_df[columns_to_display]
+    st.write('Results:')
+    st.dataframe(filtered_results, width=700, height=500)
+
+
 
