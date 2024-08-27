@@ -19,8 +19,9 @@ players_df = pd.read_excel("fantasy_app.xlsx")
 
 st.title('Fantasy Football Optimizer')
 
+st.markdown("### Total Roster Size")
 roster_size = st.number_input("Total Roster Size", min_value=14, max_value=20, step=1)
-
+st.markdown("### Starting Roster Size")
 starting_QBs = st.number_input("QBs", min_value=1, max_value=2, step=1)
 starting_RBs = st.number_input("RBs", min_value=2, max_value=4, step=1)
 starting_WRs = st.number_input("WRs", min_value=2, max_value=4, step=1)
@@ -28,12 +29,7 @@ starting_TEs = st.number_input("TEs", min_value=1, max_value=2, step=1)
 
 
 pass_td = st.number_input("Pass TD Points", min_value=4, max_value=6, step=1)
-pass_yds = st.number_input("Pass Yds Points", min_value=0.04, max_value=0.04, step=1)
-rushing_yard = st.number_input("Rush Yds Points", min_value=0.1, max_value=0.1, step=1)
-rec_yard = st.number_input("Rec Yds Points", min_value=0.1, max_value=0.1, step=1)
 rec = st.number_input("Points per Rec", min_value=0, max_value=1, step=0.5)
-interception = st.number_input("Roster Size", min_value=-2, max_value=-2, step=1)
-fumbles = st.number_input("Roster Size", min_value=-2, max_value=-2, step=1)
 
 
 roster_data = pd.DataFrame({
@@ -43,12 +39,12 @@ roster_data = pd.DataFrame({
 
 scoring = {
     "pass_touchdown": pass_td,
-    "passing_yard": pass_yds,
-    "rushing_yard": rushing_yard,
-    "receiving_yard": rec_yard,
+    "passing_yard": .04,
+    "rushing_yard": .1,
+    "receiving_yard": .1,
     "reception": rec,
-    "interception": interception,
-    "fumble_lost": fumbles
+    "interception": -2,
+    "fumble_lost": -2
 }
 
 
