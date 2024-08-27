@@ -221,9 +221,9 @@ def run_optimizer(roster_data, scoring, players_df):
 # Button to run the program
 if st.button('Run Program'):
     # Process data based on inputs
-    result_df = run_optimizer(roster_data, scoring, players_df)
+    #result_df = run_optimizer(roster_data, scoring, players_df)
     st.write('Results:')
-    st.dataframe(result_df, width=700, height=300)
+    st.dataframe(players_df, width=700, height=300)
 
 # Option to reset or change inputs
 if st.button('Reset'):
