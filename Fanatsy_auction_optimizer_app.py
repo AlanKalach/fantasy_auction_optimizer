@@ -85,10 +85,6 @@ def run_optimizer(roster_data, scoring, players_df):
     roster_history =[]
     
     #Below all functions------------------------------------------------------------------
-    # Function to get top 'Number' players for each position, for iteration 0
-    def get_top_players(group):
-        return group.nlargest(group['Number'].iloc[0], 'points/$')
-    
     #Function to do sensitivity analysis for non selected players 
     def sensitivity(matrix_df, players_df_hardcopy, max_marginal_improvement_row, count):
         matrix_df=matrix_df.apply(pd.to_numeric)
@@ -122,7 +118,10 @@ def run_optimizer(roster_data, scoring, players_df):
     players_df = players_df.merge(roster_data, on='Pos')
     
     # Apply the function to get the top 'Number' players for each position
-    roster = players_df.groupby('Pos', group_keys=False).apply(get_top_players)
+    roster = pd.concat(
+        [g.nlargest(int(g['Number'].iloc[0]), 'points/$')
+         for _, g in players_df.groupby('Pos')]
+    )
     #drop selected players
     #players_df = players_df[~players_df['Player'].isin(roster['Player'])]
     
@@ -184,9 +183,9 @@ def run_optimizer(roster_data, scoring, players_df):
             roster_row_index = roster[roster['Player'] == old_player].index[0]
             #replace player
             roster.at[roster_row_index, 'Player'] = new_player
-            roster.at[roster_row_index, 'Avg. Salary (AVG)'] = players_df[players_df['Player']==new_player]['Avg. Salary (AVG)']
-            roster.at[roster_row_index, 'Proj 23'] = players_df[players_df['Player']==new_player]['Proj 23']
-            roster.at[roster_row_index, 'points/$'] = players_df[players_df['Player']==new_player]['points/$']
+            roster.at[roster_row_index, 'Avg. Salary (AVG)'] = players_df[players_df['Player']==new_player]['Avg. Salary (AVG)'].values[0]
+            roster.at[roster_row_index, 'Proj 23'] = players_df[players_df['Player']==new_player]['Proj 23'].values[0]
+            roster.at[roster_row_index, 'points/$'] = players_df[players_df['Player']==new_player]['points/$'].values[0]
             #calculate points and spent budget
             points_game = roster["Proj 23"].sum()/17
             spent_budget = roster['Avg. Salary (AVG)'].sum() + (15-roster_data['Number'].sum())
