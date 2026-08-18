@@ -80,7 +80,7 @@ def run_optimizer(roster_data, scoring, players_df):
     players_df['points/$'] = players_df['Proj 23'] / players_df['Avg. Salary (AVG)']
     
     #create sturcture to store iteration information
-    history = pd.DataFrame(columns=['Budget spent', 'Points per Game'])
+    history_rows = []
     change_history = []
     roster_history =[]
     
@@ -111,7 +111,7 @@ def run_optimizer(roster_data, scoring, players_df):
     #Create 2 hardcopys of the players_df
     players_df_hardcopy = players_df.copy()
     players_df_hardcopy_2 = players_df.copy()
-    players_df_hardcopy_2['Sensitivity'] =    0
+    players_df_hardcopy_2['Sensitivity'] =    0.0
     players_df_hardcopy_2['Iteration'] =    0
     
     # Merge data frames based on 'Position'
@@ -132,8 +132,7 @@ def run_optimizer(roster_data, scoring, players_df):
     
     #store iteration information
     # Update history DataFrame
-    new_row = pd.DataFrame([[spent_budget, points_game]], columns=['Budget spent', 'Points per Game'])
-    history = pd.concat([history, new_row], ignore_index=True)
+    history_rows.append({'Budget spent': spent_budget, 'Points per Game': points_game})
     
     # Update roster_history list
     roster_history += [roster.copy()] 
@@ -144,7 +143,7 @@ def run_optimizer(roster_data, scoring, players_df):
     while count <= 50 and iterate==True:
         #Drop roster players
         players_df = players_df_hardcopy[~players_df_hardcopy['Player'].isin(roster['Player'])]
-        result_df= pd.DataFrame(columns=['Marginal Improvement', 'New Player','Old Player', 'Pos' ] )
+        result_rows = []
         #for every position create a matrix of available players vs existing players
         matrix_storage={}
         for pos in roster_data['Pos']:
@@ -158,25 +157,25 @@ def run_optimizer(roster_data, scoring, players_df):
                     else:
                         matrix_df.loc[pos_player, roster_player] = ((players_df[players_df['Player'] == pos_player]['Proj 23'].values[0])-(roster[roster['Player'] == roster_player]['Proj 23'].values[0])) / ((players_df[players_df['Player'] == pos_player]['Avg. Salary (AVG)'].values[0])-(roster[roster['Player'] == roster_player]['Avg. Salary (AVG)'].values[0]))
             #find maximum improvement player
-            max_value = matrix_df.values.max()
+            max_value = float(matrix_df.values.max())
             max_position = matrix_df.values.argmax()
             max_row_index, max_col_index = divmod(max_position, matrix_df.shape[1])
             # Get the names of the row and column for the maximum value
             max_row_name = matrix_df.index[max_row_index]
             max_col_name = matrix_df.columns[max_col_index]
-            # Convert the new row into a DataFrame and concatenate it with the existing result_df DataFrame
-            new_row = pd.DataFrame([{
+            # Collect the row; result_df is built once, after the position loop
+            result_rows.append({
                 'Marginal Improvement': max_value,
                 'New Player': max_row_name,
                 'Old Player': max_col_name,
                 'Pos': pos
-            }])
-            result_df = pd.concat([result_df, new_row], ignore_index=True)
-            #find best marginal improvement
-            max_marginal_improvement_row = result_df.loc[result_df['Marginal Improvement'].idxmax()]
+            })
             #sotre matrix_df for sensitivity purposes
             matrix_name=f'matrix_df_{pos}'
             matrix_storage[matrix_name]=matrix_df
+        #find best marginal improvement
+        result_df = pd.DataFrame(result_rows)
+        max_marginal_improvement_row = result_df.loc[result_df['Marginal Improvement'].idxmax()]
         if max_marginal_improvement_row['Marginal Improvement'] > 0:
             old_player = max_marginal_improvement_row['Old Player']
             new_player = max_marginal_improvement_row['New Player']
@@ -191,8 +190,7 @@ def run_optimizer(roster_data, scoring, players_df):
             spent_budget = roster['Avg. Salary (AVG)'].sum() + (15-roster_data['Number'].sum())
             available_budget = 200 - spent_budget
             #store iteration information
-            new_entry = pd.DataFrame([{'Budget spent': spent_budget, 'Points per Game': points_game}])
-            history = pd.concat([history, new_entry], ignore_index=True)
+            history_rows.append({'Budget spent': spent_budget, 'Points per Game': points_game})
             new_change = pd.DataFrame([max_marginal_improvement_row])
       
             #new_roster = pd.DataFrame([roster])
@@ -205,6 +203,7 @@ def run_optimizer(roster_data, scoring, players_df):
         count += 1
     
     #Iteration display------------------------------------------------------------------
+    history = pd.DataFrame(history_rows)
     changes = pd.DataFrame(change_history)
     
     column_dict = {col: [] for col in ['Player', 'Avg. Salary (AVG)', 'Proj 23']}
