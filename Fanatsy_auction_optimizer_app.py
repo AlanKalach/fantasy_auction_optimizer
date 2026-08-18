@@ -26,15 +26,26 @@ starting_QBs = st.number_input("QBs", min_value=1, max_value=2, step=1)
 starting_RBs = st.number_input("RBs", min_value=2, max_value=4, step=1)
 starting_WRs = st.number_input("WRs", min_value=2, max_value=4, step=1)
 starting_TEs = st.number_input("TEs", min_value=1, max_value=2, step=1)
+starting_FLEX = st.number_input("FLEX (RB/WR)", min_value=0, max_value=3, step=1)
 
 st.markdown("### Scoring Settings")
 pass_td = st.number_input("Pass TD Points", min_value=4, max_value=6, step=1)
 rec = st.number_input("Points per Rec", min_value=0.0, max_value=1.0, step=0.1, format="%0.1f")
 
 roster_data = pd.DataFrame({
-    'Number': [starting_QBs, starting_RBs, starting_WRs, starting_TEs, 1, 1],
-    'Pos': ['QB', 'RB', 'WR', 'TE', 'DEF', 'K']
+    'Number': [starting_QBs, starting_RBs, starting_WRs, starting_TEs, starting_FLEX, 1, 1],
+    'Slot': ['QB', 'RB', 'WR', 'TE', 'FLEX', 'DEF', 'K']
 })
+
+#Positions a FLEX slot can be filled with
+FLEX_POSITIONS = ['RB', 'WR']
+
+starting_total = roster_data['Number'].sum()
+if starting_total > roster_size:
+    st.warning(
+        f"The starting lineup needs {starting_total} players but the total roster size is "
+        f"{roster_size}. Raise the roster size or drop a starting slot."
+    )
 
 scoring = {
     "pass_touchdown": pass_td,
@@ -73,8 +84,9 @@ def run_optimizer(roster_data, scoring, players_df):
     
     players_df = fill_missing_points(players_df, scoring)
     
-    # Define budget
-    available_budget = 200 - (roster_size-roster_data['Number'].sum())
+    # Define budget. Every bench spot is assumed to cost the $1 minimum.
+    bench_slots = max(roster_size - roster_data['Number'].sum(), 0)
+    available_budget = 200 - bench_slots
     
     #create field with points per $ spent
     players_df['points/$'] = players_df['Proj 23'] / players_df['Avg. Salary (AVG)']
@@ -85,6 +97,10 @@ def run_optimizer(roster_data, scoring, players_df):
     roster_history =[]
     
     #Below all functions------------------------------------------------------------------
+    # Which player positions are allowed to fill a given roster slot
+    def slot_positions(slot):
+        return FLEX_POSITIONS if slot == 'FLEX' else [slot]
+    
     #Function to do sensitivity analysis for non selected players 
     def sensitivity(matrix_df, players_df_hardcopy, max_marginal_improvement_row, count):
         matrix_df=matrix_df.apply(pd.to_numeric)
@@ -114,20 +130,31 @@ def run_optimizer(roster_data, scoring, players_df):
     players_df_hardcopy_2['Sensitivity'] =    0.0
     players_df_hardcopy_2['Iteration'] =    0
     
-    # Merge data frames based on 'Position'
-    players_df = players_df.merge(roster_data, on='Pos')
+    # Fill the dedicated slots first, each from its own position
+    roster_parts = []
+    for slot, number in zip(roster_data['Slot'], roster_data['Number']):
+        if slot == 'FLEX' or number <= 0:
+            continue
+        picked = players_df[players_df['Pos'] == slot].nlargest(int(number), 'points/$').copy()
+        picked['Slot'] = slot
+        roster_parts.append(picked)
     
-    # Apply the function to get the top 'Number' players for each position
-    roster = pd.concat(
-        [g.nlargest(int(g['Number'].iloc[0]), 'points/$')
-         for _, g in players_df.groupby('Pos')]
-    )
+    # Flex slots then take the best of whoever is left in the eligible positions
+    flex_number = int(roster_data.loc[roster_data['Slot'] == 'FLEX', 'Number'].sum())
+    if flex_number > 0:
+        taken = pd.concat(roster_parts)['Player'] if roster_parts else pd.Series(dtype=object)
+        flex_pool = players_df[players_df['Pos'].isin(FLEX_POSITIONS) & ~players_df['Player'].isin(taken)]
+        picked = flex_pool.nlargest(flex_number, 'points/$').copy()
+        picked['Slot'] = 'FLEX'
+        roster_parts.append(picked)
+    
+    roster = pd.concat(roster_parts)
     #drop selected players
     #players_df = players_df[~players_df['Player'].isin(roster['Player'])]
     
     #calculate points and spent budget
     points_game = roster["Proj 23"].sum()/17
-    spent_budget = roster['Avg. Salary (AVG)'].sum() + (15-roster_data['Number'].sum())
+    spent_budget = roster['Avg. Salary (AVG)'].sum() + bench_slots
     available_budget = 200 - spent_budget
     
     #store iteration information
@@ -144,18 +171,26 @@ def run_optimizer(roster_data, scoring, players_df):
         #Drop roster players
         players_df = players_df_hardcopy[~players_df_hardcopy['Player'].isin(roster['Player'])]
         result_rows = []
-        #for every position create a matrix of available players vs existing players
+        #for every slot create a matrix of available players vs existing players
         matrix_storage={}
-        for pos in roster_data['Pos']:
-            pos_players = players_df[players_df['Pos']==pos]
-            pos_roster = roster[roster['Pos']==pos]
-            matrix_df = pd.DataFrame(index=pos_players['Player'], columns=pos_roster['Player'])
-            for pos_player in matrix_df.index:
-                for roster_player in matrix_df.columns:
-                    if ((players_df[players_df['Player'] == pos_player]['Proj 23'].values[0])-(roster[roster['Player'] == roster_player]['Proj 23'].values[0])) <= 0 or ((players_df[players_df['Player'] == pos_player]['Avg. Salary (AVG)'].values[0])-(roster[roster['Player'] == roster_player]['Avg. Salary (AVG)'].values[0])) > available_budget:
-                        matrix_df.loc[pos_player, roster_player] = -10*np.random.uniform()
-                    else:
-                        matrix_df.loc[pos_player, roster_player] = ((players_df[players_df['Player'] == pos_player]['Proj 23'].values[0])-(roster[roster['Player'] == roster_player]['Proj 23'].values[0])) / ((players_df[players_df['Player'] == pos_player]['Avg. Salary (AVG)'].values[0])-(roster[roster['Player'] == roster_player]['Avg. Salary (AVG)'].values[0]))
+        for slot in roster_data['Slot']:
+            pos_players = players_df[players_df['Pos'].isin(slot_positions(slot))]
+            pos_roster = roster[roster['Slot']==slot]
+            #nothing to swap when the slot is unused or the position pool is exhausted
+            if pos_players.empty or pos_roster.empty:
+                continue
+            # Points and salary deltas for every candidate/incumbent pair at once.
+            # Row i, column j is candidate i replacing the incumbent in slot j.
+            delta_points = (pos_players['Proj 23'].values[:, None]
+                            - pos_roster['Proj 23'].values[None, :])
+            delta_salary = (pos_players['Avg. Salary (AVG)'].values[:, None]
+                            - pos_roster['Avg. Salary (AVG)'].values[None, :])
+            # A swap is off the table if it loses points or busts the budget
+            blocked = (delta_points <= 0) | (delta_salary > available_budget)
+            with np.errstate(divide='ignore', invalid='ignore'):
+                values = delta_points / delta_salary
+            values[blocked] = -10*np.random.uniform(size=int(blocked.sum()))
+            matrix_df = pd.DataFrame(values, index=pos_players['Player'], columns=pos_roster['Player'])
             #find maximum improvement player
             max_value = float(matrix_df.values.max())
             max_position = matrix_df.values.argmax()
@@ -168,11 +203,14 @@ def run_optimizer(roster_data, scoring, players_df):
                 'Marginal Improvement': max_value,
                 'New Player': max_row_name,
                 'Old Player': max_col_name,
-                'Pos': pos
+                'Slot': slot
             })
             #sotre matrix_df for sensitivity purposes
-            matrix_name=f'matrix_df_{pos}'
+            matrix_name=f'matrix_df_{slot}'
             matrix_storage[matrix_name]=matrix_df
+        #no slot had a candidate to evaluate, so there is nothing left to improve
+        if not result_rows:
+            break
         #find best marginal improvement
         result_df = pd.DataFrame(result_rows)
         max_marginal_improvement_row = result_df.loc[result_df['Marginal Improvement'].idxmax()]
@@ -182,12 +220,14 @@ def run_optimizer(roster_data, scoring, players_df):
             roster_row_index = roster[roster['Player'] == old_player].index[0]
             #replace player
             roster.at[roster_row_index, 'Player'] = new_player
+            #a flex swap can bring in a different position, so Pos travels with the player
+            roster.at[roster_row_index, 'Pos'] = players_df[players_df['Player']==new_player]['Pos'].values[0]
             roster.at[roster_row_index, 'Avg. Salary (AVG)'] = players_df[players_df['Player']==new_player]['Avg. Salary (AVG)'].values[0]
             roster.at[roster_row_index, 'Proj 23'] = players_df[players_df['Player']==new_player]['Proj 23'].values[0]
             roster.at[roster_row_index, 'points/$'] = players_df[players_df['Player']==new_player]['points/$'].values[0]
             #calculate points and spent budget
             points_game = roster["Proj 23"].sum()/17
-            spent_budget = roster['Avg. Salary (AVG)'].sum() + (15-roster_data['Number'].sum())
+            spent_budget = roster['Avg. Salary (AVG)'].sum() + bench_slots
             available_budget = 200 - spent_budget
             #store iteration information
             history_rows.append({'Budget spent': spent_budget, 'Points per Game': points_game})
@@ -222,16 +262,16 @@ if st.button('Run Program'):
     # Add the sum row to the DataFrame
     result_df = result_df.rename(columns={"Proj 23": "Projected Points"})
     result_df = result_df.rename(columns={"Avg. Salary (AVG)": "Avg. Salary"})
-    columns_to_display = ["Player", "Pos", "Projected Points", "Avg. Salary"]
-    filtered_results=result_df[columns_to_display]
-    # Define the custom order for the 'Pos' field
-    position_order = {'QB': 1, 'RB': 2, 'WR': 3, 'TE': 4, 'K': 5, 'DEF': 6}
-    # Add a new column to sort by custom position order
-    filtered_results['Pos Order'] = filtered_results['Pos'].map(position_order)
-    # Sort the DataFrame by 'Pos Order' and 'Projected Points'
-    results_sorted = filtered_results.sort_values(by=['Pos Order', 'Projected Points'], ascending=[True, False])
-    # Drop the temporary 'Pos Order' column
-    results_sorted = results_sorted.drop(columns=['Pos Order'])
+    columns_to_display = ["Player", "Slot", "Pos", "Projected Points", "Avg. Salary"]
+    filtered_results=result_df[columns_to_display].copy()
+    # Define the custom order for the 'Slot' field
+    slot_order = {'QB': 1, 'RB': 2, 'WR': 3, 'TE': 4, 'FLEX': 5, 'K': 6, 'DEF': 7}
+    # Add a new column to sort by custom slot order
+    filtered_results['Slot Order'] = filtered_results['Slot'].map(slot_order)
+    # Sort the DataFrame by 'Slot Order' and 'Projected Points'
+    results_sorted = filtered_results.sort_values(by=['Slot Order', 'Projected Points'], ascending=[True, False])
+    # Drop the temporary 'Slot Order' column
+    results_sorted = results_sorted.drop(columns=['Slot Order'])
     st.write('Optimal Roster:')
     st.dataframe(results_sorted, width=700, height=400)
     st.write(f'Points per Game: {points_game:.2f}')
