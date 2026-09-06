@@ -13,11 +13,52 @@ import streamlit as st
 
 #Import and prepare data--------------------------------------------------------------------------
 
-# Read Excel data into a data frame
-players_df = pd.read_excel("fantasy_app.xlsx")
-#Define roster size
+DATA_FILE = "fantasy_app.xlsx"
 
-st.title('Fantasy Football Optimizer 2024 Season by Alan Kalach')
+st.title('Fantasy Football Optimizer 2026 Season by Alan Kalach')
+
+# Each sheet in the workbook that carries a player table is a selectable source
+# (e.g. "Sleeper", "ESPN"). Salaries and stats can be pulled from different ones.
+def load_sources(path):
+    book = pd.read_excel(path, sheet_name=None)
+    return {name: df for name, df in book.items()
+            if {'Player', 'Pos', 'Avg. Salary (AVG)', 'Proj 23'}.issubset(df.columns)}
+
+sources = load_sources(DATA_FILE)
+SOURCE_NAMES = list(sources.keys())
+_default = 'Sleeper' if 'Sleeper' in SOURCE_NAMES else SOURCE_NAMES[0]
+
+st.markdown("### Data Sources")
+salary_source = st.selectbox(
+    "Salary source (auction $)", SOURCE_NAMES, index=SOURCE_NAMES.index(_default),
+    help="Whose auction values to price players with. Pick the platform you draft on.")
+stats_source = st.selectbox(
+    "Stats / projection source", SOURCE_NAMES, index=SOURCE_NAMES.index(_default),
+    help="Whose projected stat lines / points to score players with.")
+
+def _name_key(name):
+    # Match players across sources despite "Jr."/"Sr."/suffix and punctuation differences
+    key = str(name).lower()
+    for junk in [" jr.", " jr", " sr.", " sr", " iii", " ii", " iv", " v", ".", "'", "-"]:
+        key = key.replace(junk, "")
+    return " ".join(key.split())
+
+def build_players_df(stats_df, salary_df):
+    df = stats_df.drop(columns=['Avg. Salary (AVG)'], errors='ignore').copy()
+    prices = (salary_df.assign(_k=salary_df['Player'].map(_name_key))
+                       .drop_duplicates('_k').set_index('_k')['Avg. Salary (AVG)'])
+    df['Avg. Salary (AVG)'] = df['Player'].map(_name_key).map(prices)
+    missing = sorted(df.loc[df['Avg. Salary (AVG)'].isna(), 'Player'])
+    df['Avg. Salary (AVG)'] = df['Avg. Salary (AVG)'].fillna(1).clip(lower=1)
+    return df, missing
+
+players_df, _missing_prices = build_players_df(sources[stats_source], sources[salary_source])
+if _missing_prices:
+    st.caption(
+        f"{len(_missing_prices)} player(s) from the {stats_source} stat list have no "
+        f"{salary_source} auction value and were priced at $1: "
+        + ", ".join(_missing_prices))
+#Define roster size
 
 st.markdown("### Total Roster Size")
 roster_size = st.number_input("Total Roster Size", min_value=14, max_value=20, step=1)
