@@ -58,6 +58,28 @@ if _missing_prices:
         f"{len(_missing_prices)} player(s) from the {stats_source} stat list have no "
         f"{salary_source} auction value and were priced at $1: "
         + ", ".join(_missing_prices))
+
+# Manual projection adjustments (injuries, suspensions, legal trouble, gut feel).
+# Edit the "Adjustments" sheet: Player | Adjust % | Reason. Negative % cuts the
+# projection (e.g. -20 => 80% of projected points), positive % raises it.
+def load_adjustments(path):
+    try:
+        adj = pd.read_excel(path, sheet_name='Adjustments')
+    except (ValueError, KeyError):
+        return {}, pd.DataFrame()
+    adj = adj.dropna(subset=['Player', 'Adjust %'])
+    factors = {_name_key(p): 1 + float(v) / 100.0
+               for p, v in zip(adj['Player'], adj['Adjust %'])}
+    return factors, adj
+
+ADJUSTMENTS, _adj_table = load_adjustments(DATA_FILE)
+if ADJUSTMENTS:
+    _hit = players_df.loc[players_df['Player'].map(_name_key).isin(ADJUSTMENTS), 'Player'].tolist()
+    st.markdown("### Manual Adjustments Applied")
+    st.dataframe(_adj_table, hide_index=True)
+    _absent = sorted(set(_adj_table['Player']) - set(_hit))
+    if _absent:
+        st.caption("Not in the current player list (no effect): " + ", ".join(_absent))
 #Define roster size
 
 st.markdown("### Total Roster Size")
@@ -100,7 +122,7 @@ scoring = {
 
 
 
-def run_optimizer(roster_data, scoring, players_df):
+def run_optimizer(roster_data, scoring, players_df, adjustments=None):
 
     def calculate_points(row, scoring):
         points = 0
@@ -124,7 +146,13 @@ def run_optimizer(roster_data, scoring, players_df):
         return df
     
     players_df = fill_missing_points(players_df, scoring)
-    
+
+    # Apply manual projection adjustments after points are settled
+    if adjustments:
+        players_df = players_df.copy()
+        factor = players_df['Player'].map(_name_key).map(adjustments).fillna(1.0)
+        players_df['Proj 23'] = players_df['Proj 23'] * factor
+
     # Define budget. Every bench spot is assumed to cost the $1 minimum.
     bench_slots = max(roster_size - roster_data['Number'].sum(), 0)
     available_budget = 200 - bench_slots
@@ -298,7 +326,7 @@ def run_optimizer(roster_data, scoring, players_df):
 # Button to run the program
 if st.button('Run Program'):
     # Process data based on inputs
-    result_df, points_game, spent_budget = run_optimizer(roster_data, scoring, players_df)
+    result_df, points_game, spent_budget = run_optimizer(roster_data, scoring, players_df, adjustments=ADJUSTMENTS)
 
     # Add the sum row to the DataFrame
     result_df = result_df.rename(columns={"Proj 23": "Projected Points"})
