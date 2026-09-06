@@ -59,27 +59,51 @@ if _missing_prices:
         f"{salary_source} auction value and were priced at $1: "
         + ", ".join(_missing_prices))
 
-# Manual projection adjustments (injuries, suspensions, legal trouble, gut feel).
-# Edit the "Adjustments" sheet: Player | Adjust % | Reason. Negative % cuts the
-# projection (e.g. -20 => 80% of projected points), positive % raises it.
-def load_adjustments(path):
+# Manual projection adjustments — injuries, suspensions, legal trouble, or just
+# players you don't trust. Negative % cuts the projection (-20 => 80% of points),
+# positive % raises it. The workbook's "Adjustments" sheet seeds the defaults;
+# the table below is editable per session (add / edit / delete rows).
+ADJ_COLS = ['Player', 'Adjust %', 'Comment']
+
+def load_adjustment_seed(path):
     try:
         adj = pd.read_excel(path, sheet_name='Adjustments')
     except (ValueError, KeyError):
-        return {}, pd.DataFrame()
-    adj = adj.dropna(subset=['Player', 'Adjust %'])
-    factors = {_name_key(p): 1 + float(v) / 100.0
-               for p, v in zip(adj['Player'], adj['Adjust %'])}
-    return factors, adj
+        adj = pd.DataFrame(columns=ADJ_COLS)
+    adj = adj.rename(columns={'Reason': 'Comment'})
+    for col in ADJ_COLS:
+        if col not in adj.columns:
+            adj[col] = None
+    return adj[ADJ_COLS]
 
-ADJUSTMENTS, _adj_table = load_adjustments(DATA_FILE)
+with st.expander("Manual player adjustments  —  injuries, suspensions, players you don't trust",
+                 expanded=False):
+    st.caption("Negative % lowers a player's projected points, positive raises it "
+               "(-20 = value them at 80%). Injury / legal defaults load from the workbook; "
+               "add, edit or delete rows for this session.")
+    _adj_edited = st.data_editor(
+        load_adjustment_seed(DATA_FILE), num_rows="dynamic",
+        use_container_width=True, hide_index=True, key="adj_editor",
+        column_config={
+            "Player": st.column_config.TextColumn("Player", required=True),
+            "Adjust %": st.column_config.NumberColumn("Adjust %", min_value=-100,
+                                                     max_value=100, step=5),
+            "Comment": st.column_config.TextColumn("Comment", width="large"),
+        })
+
+ADJUSTMENTS = {}
+for _p, _v in zip(_adj_edited['Player'], _adj_edited['Adjust %']):
+    if isinstance(_p, str) and _p.strip() and pd.notna(_v) and float(_v) != 0:
+        ADJUSTMENTS[_name_key(_p)] = 1 + float(_v) / 100.0
+
 if ADJUSTMENTS:
-    _hit = players_df.loc[players_df['Player'].map(_name_key).isin(ADJUSTMENTS), 'Player'].tolist()
-    st.markdown("### Manual Adjustments Applied")
-    st.dataframe(_adj_table, hide_index=True)
-    _absent = sorted(set(_adj_table['Player']) - set(_hit))
+    _hit = set(players_df.loc[players_df['Player'].map(_name_key).isin(ADJUSTMENTS), 'Player']
+               .map(_name_key))
+    _absent = sorted({p for p in _adj_edited['Player']
+                      if isinstance(p, str) and p.strip() and _name_key(p) not in _hit})
     if _absent:
-        st.caption("Not in the current player list (no effect): " + ", ".join(_absent))
+        st.caption("Adjustment set but not matched to a player in the current list: "
+                   + ", ".join(_absent))
 #Define roster size
 
 st.markdown("### Total Roster Size")
