@@ -1,0 +1,143 @@
+Player,Pos,Team2026,AuctionValue,StatSource
+Jahmyr Gibbs,RB,DET,57,2025 actual stats
+Bijan Robinson,RB,ATL,56,2025 actual stats
+Ja'Marr Chase,WR,CIN,56,2025 actual stats
+Puka Nacua,WR,LAR,55,2025 actual stats
+Jonathan Taylor,RB,IND,54,2025 actual stats
+Jaxon Smith-Njigba,WR,SEA,53,2025 actual stats
+Christian McCaffrey,RB,SF,52,2025 actual stats
+Amon-Ra St. Brown,WR,DET,52,2025 actual stats
+James Cook III,RB,BUF,51,2025 actual stats
+CeeDee Lamb,WR,DAL,50,2025 actual stats
+Justin Jefferson,WR,MIN,48,2025 actual stats
+De'Von Achane,RB,MIA,46,2025 actual stats
+Omarion Hampton,RB,LAC,45,2026 projection - only 9 games in 2025 (injury)
+Chase Brown,RB,CIN,43,2025 actual stats
+Saquon Barkley,RB,PHI,42,2025 actual stats
+Derrick Henry,RB,BAL,40,2025 actual stats
+Ashton Jeanty,RB,LV,38,2025 actual stats
+Drake London,WR,ATL,37,2025 actual stats
+Jeremiyah Love,RB,ARI,36,2026 projection - rookie / did not play 2025
+A.J. Brown,WR,NE,35,2026 projection - changed teams (PHI->NE)
+Trey McBride,TE,ARI,34,2025 actual stats
+Brock Bowers,TE,LV,33,2025 actual stats
+Nico Collins,WR,HOU,32,2025 actual stats
+Chris Olave,WR,NO,32,2025 actual stats
+Rashee Rice,WR,KC,31,2026 projection - only 8 games in 2025 (injury)
+Josh Allen,QB,BUF,30,2025 actual stats
+George Pickens,WR,DAL,30,2025 actual stats
+Kenneth Walker III,RB,KC,29,2026 projection - changed teams (SEA->KC)
+Garrett Wilson,WR,NYJ,28,2026 projection - only 8 games in 2025 (injury)
+Breece Hall,RB,NYJ,27,2025 actual stats
+Javonte Williams,RB,DAL,26,2025 actual stats
+Kyren Williams,RB,LAR,25,2025 actual stats
+Malik Nabers,WR,NYG,24,2026 projection - only 4 games in 2025 (injury)
+DeVonta Smith,WR,PHI,23,2025 actual stats
+Travis Etienne Jr.,RB,NO,22,2026 projection - changed teams (JAX->NO)
+Tetairoa McMillan,WR,CAR,22,2025 actual stats
+Zay Flowers,WR,BAL,22,2025 actual stats
+Emeka Egbuka,WR,TB,21,2025 actual stats
+Quinshon Judkins,RB,CLE,21,2025 actual stats
+Ladd McConkey,WR,LAC,20,2025 actual stats
+Tee Higgins,WR,CIN,19,2025 actual stats
+Colston Loveland,TE,CHI,19,2025 actual stats
+Lamar Jackson,QB,BAL,18,2025 actual stats
+Davante Adams,WR,LAR,17,2025 actual stats
+Cam Skattebo,RB,NYG,17,2026 projection - only 8 games in 2025 (injury)
+D'Andre Swift,RB,CHI,15,2025 actual stats
+Bhayshul Tuten,RB,JAX,15,2025 actual stats
+Jaylen Waddle,WR,DEN,14,2026 projection - changed teams (MIA->DEN)
+Bucky Irving,RB,TB,13,2025 actual stats
+Terry McLaurin,WR,WSH,13,2025 actual stats
+DJ Moore,WR,BUF,12,2026 projection - changed teams (CHI->BUF)
+Tyler Warren,TE,IND,11,2025 actual stats
+Jameson Williams,WR,DET,11,2025 actual stats
+Rome Odunze,WR,CHI,10,2025 actual stats
+Jayden Daniels,QB,WSH,10,2026 projection - only 7 games in 2025 (injury)
+Drake Maye,QB,NE,10,2025 actual stats
+David Montgomery,RB,HOU,10,2025 actual stats
+Jadarian Price,RB,SEA,9,2026 projection - rookie / did not play 2025
+Luther Burden III,WR,CHI,9,2025 actual stats
+TreVeyon Henderson,RB,NE,9,2025 actual stats
+Carnell Tate,WR,TEN,8,2026 projection - rookie / did not play 2025
+Mike Evans,WR,SF,8,2026 projection - changed teams (TB->SF)
+Marvin Harrison Jr.,WR,ARI,8,2025 actual stats
+Joe Burrow,QB,CIN,7,2026 projection - only 8 games in 2025 (injury)
+Rhamondre Stevenson,RB,NE,7,2025 actual stats
+Jalen Hurts,QB,PHI,7,2025 actual stats
+Michael Pittman Jr.,WR,PIT,7,2026 projection - changed teams (IND->PIT)
+Tony Pollard,RB,TEN,6,2025 actual stats
+Harold Fannin Jr.,TE,CLE,6,2025 actual stats
+Kyle Pitts Sr.,TE,ATL,6,2025 actual stats
+DK Metcalf,WR,PIT,6,2025 actual stats
+George Kittle,TE,SF,6,2025 actual stats
+Courtland Sutton,WR,DEN,6,2025 actual stats
+Christian Watson,WR,GB,5,2025 actual stats
+Dak Prescott,QB,DAL,5,2025 actual stats
+Parker Washington,WR,JAX,5,2025 actual stats
+Jaylen Warren,RB,PIT,5,2025 actual stats
+Sam LaPorta,TE,DET,4,2026 projection - only 9 games in 2025 (injury)
+Kenny Gainwell,RB,TB,4,2025 actual stats
+Jaxson Dart,QB,NYG,4,2025 actual stats
+Josh Jacobs,RB,GB,4,2025 actual stats
+Wan'Dale Robinson,WR,TEN,4,2026 projection - changed teams (NYG->TEN)
+Jonathon Brooks,RB,CAR,4,2026 projection - rookie / did not play 2025
+Justin Herbert,QB,LAC,4,2025 actual stats
+Michael Wilson,WR,ARI,4,2025 actual stats
+MarShawn Lloyd,RB,GB,4,2026 projection - rookie / did not play 2025
+Caleb Williams,QB,CHI,3,2025 actual stats
+Rico Dowdle,RB,PIT,3,2026 projection - changed teams (CAR->PIT)
+Stefon Diggs,WR,WSH,3,2026 projection - changed teams (NE->WSH)
+Alec Pierce,WR,IND,3,2025 actual stats
+Travis Hunter,WR,JAX,3,2026 projection - only 7 games in 2025 (injury)
+Tucker Kraft,TE,GB,3,2026 projection - only 8 games in 2025 (injury)
+Chuba Hubbard,RB,CAR,3,2025 actual stats
+Jakobi Meyers,WR,JAX,3,2025 actual stats
+Trevor Lawrence,QB,JAX,3,2025 actual stats
+Aaron Jones Sr.,RB,MIN,3,2025 actual stats
+Brian Thomas Jr.,WR,JAX,2,2025 actual stats
+Brock Purdy,QB,SF,2,2026 projection - only 9 games in 2025 (injury)
+Rachaad White,RB,WSH,2,2026 projection - changed teams (TB->WSH)
+J.K. Dobbins,RB,DEN,2,2025 actual stats
+Kyle Monangai,RB,CHI,2,2025 actual stats
+Travis Kelce,TE,KC,2,2025 actual stats
+Matthew Golden,WR,GB,2,2025 actual stats
+Chris Godwin Jr.,WR,TB,2,2026 projection - only 9 games in 2025 (injury)
+Jordan Addison,WR,MIN,2,2025 actual stats
+Josh Downs,WR,IND,2,2025 actual stats
+Dallas Goedert,TE,PHI,2,2025 actual stats
+RJ Harvey,RB,DEN,2,2025 actual stats
+Patrick Mahomes,QB,KC,2,2025 actual stats
+Khalil Shakir,WR,BUF,2,2025 actual stats
+Blake Corum,RB,LAR,2,2025 actual stats
+Bo Nix,QB,DEN,2,2025 actual stats
+Matthew Stafford,QB,LAR,2,2025 actual stats
+Jake Ferguson,TE,DAL,2,2025 actual stats
+Makai Lemon,WR,PHI,2,2026 projection - rookie / did not play 2025
+Isaiah Likely,TE,NYG,2,2026 projection - changed teams (BAL->NYG)
+Quentin Johnston,WR,LAC,2,2025 actual stats
+Jacory Croskey-Merritt,RB,WSH,2,2025 actual stats
+Jayden Reed,WR,GB,2,2026 projection - only 7 games in 2025 (injury)
+Mark Andrews,TE,BAL,2,2025 actual stats
+De'Zhaun Stribling,WR,SF,1,2026 projection - rookie / did not play 2025
+Kyler Murray,QB,MIN,1,2026 projection - changed teams (ARI->MIN)
+Xavier Worthy,WR,KC,1,2025 actual stats
+Romeo Doubs,WR,NE,1,2026 projection - changed teams (GB->NE)
+Jalen Coker,WR,CAR,1,2025 actual stats
+Dalton Kincaid,TE,BUF,1,2025 actual stats
+Tyjae Spears,RB,TEN,1,2025 actual stats
+Tyler Shough,QB,NO,1,2025 actual stats
+Jordan Mason,RB,MIN,1,2025 actual stats
+Deebo Samuel Sr.,WR,SF,1,2026 projection - changed teams (WSH->SF)
+Jared Goff,QB,DET,1,2025 actual stats
+Woody Marks,RB,HOU,1,2025 actual stats
+KC Concepcion,WR,CLE,1,2026 projection - rookie / did not play 2025
+Jalen McMillan,WR,TB,1,2026 projection - only 4 games in 2025 (injury)
+Zach Charbonnet,RB,SEA,1,2025 actual stats
+Jonah Coleman,RB,DEN,1,2026 projection - rookie / did not play 2025
+Baker Mayfield,QB,TB,1,2025 actual stats
+Isiah Pacheco,RB,DET,1,2026 projection - changed teams (KC->DET)
+Chris Rodriguez Jr.,RB,JAX,1,2026 projection - changed teams (WSH->JAX)
+Daniel Jones,QB,IND,1,2025 actual stats
+Juwan Johnson,TE,NO,1,2025 actual stats
+Alvin Kamara,RB,NO,1,2025 actual stats
