@@ -76,16 +76,23 @@ def load_adjustment_seed(path):
             adj[col] = None
     return adj[ADJ_COLS]
 
+_adj_seed = load_adjustment_seed(DATA_FILE)
+# dropdown options: every player in any source, plus any name already seeded
+_player_options = sorted(
+    {n for df in sources.values() for n in df['Player'].dropna().astype(str)}
+    | {str(p) for p in _adj_seed['Player'].dropna()})
+
 with st.expander("Manual player adjustments  —  injuries, suspensions, players you don't trust",
                  expanded=False):
     st.caption("Negative % lowers a player's projected points, positive raises it "
                "(-20 = value them at 80%). Injury / legal defaults load from the workbook; "
                "add, edit or delete rows for this session.")
     _adj_edited = st.data_editor(
-        load_adjustment_seed(DATA_FILE), num_rows="dynamic",
+        _adj_seed, num_rows="dynamic",
         use_container_width=True, hide_index=True, key="adj_editor",
         column_config={
-            "Player": st.column_config.TextColumn("Player", required=True),
+            "Player": st.column_config.SelectboxColumn("Player", options=_player_options,
+                                                       required=True),
             "Adjust %": st.column_config.NumberColumn("Adjust %", min_value=-100,
                                                      max_value=100, step=5),
             "Comment": st.column_config.TextColumn("Comment", width="large"),
@@ -189,6 +196,7 @@ def run_optimizer(roster_data, scoring, players_df, adjustments=None):
     change_history = []
     roster_history =[]
     goal_seeks = []   # marginal points-per-$ rate of each accepted swap
+    swaps = []        # every roster change the optimizer made, in order
     
     #Below all functions------------------------------------------------------------------
     # Which player positions are allowed to fill a given roster slot
@@ -326,6 +334,14 @@ def run_optimizer(roster_data, scoring, players_df, adjustments=None):
             #store iteration information
             history_rows.append({'Budget spent': spent_budget, 'Points per Game': points_game})
             goal_seeks.append(float(max_marginal_improvement_row['Marginal Improvement']))
+            swaps.append({
+                'Step': len(swaps) + 1,
+                'Slot': max_marginal_improvement_row['Slot'],
+                'Out': old_player,
+                'In': new_player,
+                'Pts/G after': round(points_game, 2),
+                'Spent after': round(float(spent_budget), 1),
+            })
             new_change = pd.DataFrame([max_marginal_improvement_row])
       
             #new_roster = pd.DataFrame([roster])
@@ -350,7 +366,19 @@ def run_optimizer(roster_data, scoring, players_df, adjustments=None):
     # (the tail of the run, where it has nearly converged) to damp the algorithm's
     # built-in randomness
     lam = float(np.mean(goal_seeks[-3:])) if goal_seeks else None
-    return roster, points_game, spent_budget, players_df_hardcopy_2, lam, available_budget, bench_slots
+
+    history = history.reset_index(drop=True)
+    history.insert(0, 'Step', range(len(history)))          # 0 = initial greedy roster
+    meta = {
+        'pool': players_df_hardcopy_2,
+        'lam': lam,
+        'available_budget': available_budget,
+        'bench_slots': bench_slots,
+        'passes': count - 1,          # how many times the swap loop ran
+        'swaps': pd.DataFrame(swaps),  # every roster change, in order
+        'history': history,            # points/$ curve, one row per step
+    }
+    return roster, points_game, spent_budget, meta
 
 
 def bid_analysis(roster, pool, lam, one_player_cap):
@@ -439,8 +467,7 @@ show_bids = st.checkbox(
 
 if st.button('Run Program'):
     # Process data based on inputs
-    (result_df, points_game, spent_budget,
-     _pool, _lam, _avail_budget, _bench) = run_optimizer(
+    result_df, points_game, spent_budget, meta = run_optimizer(
         roster_data, scoring, players_df, adjustments=ADJUSTMENTS)
 
     roster_for_bids = result_df.copy()   # keep original column names for bid_analysis
@@ -465,14 +492,14 @@ if st.button('Run Program'):
 
     if show_bids:
         st.markdown("### Advanced: auction bid guidance")
-        one_player_cap = 200 - _bench - (int(roster_data['Number'].sum()) - 1)
-        ceilings, targets = bid_analysis(roster_for_bids, _pool, _lam, one_player_cap)
+        one_player_cap = 200 - meta['bench_slots'] - (int(roster_data['Number'].sum()) - 1)
+        ceilings, targets = bid_analysis(roster_for_bids, meta['pool'], meta['lam'], one_player_cap)
         if ceilings is None:
             st.info("Not enough optimizer movement to estimate bid values this run.")
         else:
             st.caption(
-                f"Marginal value at this roster: ~${1/_lam:,.1f} per projected point "
-                f"(1 extra $ buys ~{_lam:,.2f} pts). Numbers are guidance, not hard limits."
+                f"Marginal value at this roster: ~${1/meta['lam']:,.1f} per projected point "
+                f"(1 extra $ buys ~{meta['lam']:,.2f} pts). Numbers are guidance, not hard limits."
             )
             st.markdown("**Players you drafted — how high you can go**")
             st.caption("Max bid = the price at which the best still-available "
@@ -482,6 +509,24 @@ if st.button('Run Program'):
             st.caption("Buy at/below = the price at which this player would bump "
                        "your weakest starter at his position.")
             st.dataframe(targets, hide_index=True, width=700, height=430)
+
+    # ---- Run details -------------------------------------------------------
+    _swaps = meta['swaps']
+    _hist = meta['history']
+    with st.expander(f"Run details  —  {len(_swaps)} roster changes over "
+                     f"{meta['passes']} optimizer passes", expanded=False):
+        start_ppg = _hist['Points per Game'].iloc[0]
+        st.write(f"Greedy start: {start_ppg:.2f} pts/game, "
+                 f"${_hist['Budget spent'].iloc[0]:.0f} spent")
+        st.write(f"After {len(_swaps)} swaps: {points_game:.2f} pts/game, "
+                 f"${spent_budget:.0f} spent  "
+                 f"(+{points_game - start_ppg:.2f} pts/game)")
+        if not _hist.empty:
+            st.markdown("**Points/game as the optimizer worked**")
+            st.line_chart(_hist.set_index('Step')['Points per Game'])
+        if not _swaps.empty:
+            st.markdown("**Every roster change, in order**")
+            st.dataframe(_swaps, hide_index=True, width=700, height=430)
  
 
 
