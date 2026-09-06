@@ -188,6 +188,7 @@ def run_optimizer(roster_data, scoring, players_df, adjustments=None):
     history_rows = []
     change_history = []
     roster_history =[]
+    goal_seeks = []   # marginal points-per-$ rate of each accepted swap
     
     #Below all functions------------------------------------------------------------------
     # Which player positions are allowed to fill a given roster slot
@@ -324,6 +325,7 @@ def run_optimizer(roster_data, scoring, players_df, adjustments=None):
             available_budget = 200 - spent_budget
             #store iteration information
             history_rows.append({'Budget spent': spent_budget, 'Points per Game': points_game})
+            goal_seeks.append(float(max_marginal_improvement_row['Marginal Improvement']))
             new_change = pd.DataFrame([max_marginal_improvement_row])
       
             #new_roster = pd.DataFrame([roster])
@@ -344,13 +346,104 @@ def run_optimizer(roster_data, scoring, players_df, adjustments=None):
         for col in ['Player', 'Avg. Salary (AVG)', 'Proj 23']:
             column_dict[col].extend(df[col])
     roster_evolution = pd.DataFrame(column_dict)
-    return roster, points_game, spent_budget
-    
+    # marginal points-per-$ at the optimum: average the last few accepted swaps
+    # (the tail of the run, where it has nearly converged) to damp the algorithm's
+    # built-in randomness
+    lam = float(np.mean(goal_seeks[-3:])) if goal_seeks else None
+    return roster, points_game, spent_budget, players_df_hardcopy_2, lam, available_budget, bench_slots
+
+
+def bid_analysis(roster, pool, lam, one_player_cap):
+    """Turn the last optimization into auction guidance.
+
+    lam = marginal points gained per extra $ at the optimum. 1/lam = $ per point.
+    For each rostered player: the ceiling price you could pay before the best
+    still-available replacement becomes the better buy.
+    For everyone else: the price at or below which they'd bump your weakest
+    starter at their position and belong in the roster instead.
+    """
+    if not lam or lam <= 0:
+        return None, None
+    dollars_per_point = 1.0 / lam
+
+    def slot_positions(slot):
+        return FLEX_POSITIONS if slot == 'FLEX' else [slot]
+
+    rostered = set(roster['Player'])
+    avail = pool[~pool['Player'].isin(rostered)].copy()
+    slots = list(roster['Slot'].unique())
+
+    weakest_starter = {}   # current starter most at risk in each slot
+    for s in slots:
+        held = roster[roster['Slot'] == s]
+        if not held.empty:
+            weakest_starter[s] = held.loc[held['Proj 23'].idxmin()]
+
+    def fallback_for(r):
+        # who you'd actually slot in if you lost this player: the best still-available
+        # option at his slot costing the same or less; if everything left costs more,
+        # the cheapest one available
+        cand = avail[avail['Pos'].isin(slot_positions(r['Slot']))]
+        if cand.empty:
+            return None
+        cheaper = cand[cand['Avg. Salary (AVG)'] <= r['Avg. Salary (AVG)']]
+        if not cheaper.empty:
+            return cheaper.loc[cheaper['Proj 23'].idxmax()]
+        return cand.loc[cand['Avg. Salary (AVG)'].idxmin()]
+
+    ceil_rows = []
+    for _, r in roster.iterrows():
+        alt = fallback_for(r)
+        if alt is None:
+            ceiling, altname = one_player_cap, '-'
+        else:
+            ceiling = alt['Avg. Salary (AVG)'] + (r['Proj 23'] - alt['Proj 23']) * dollars_per_point
+            altname = alt['Player']
+        ceiling = max(1.0, min(float(ceiling), float(one_player_cap)))
+        ceil_rows.append({
+            'Player': r['Player'], 'Slot': r['Slot'],
+            'Proj': round(float(r['Proj 23']), 1),
+            'Est. $': int(round(r['Avg. Salary (AVG)'])),
+            'Max bid $': int(round(ceiling)),
+            'vs Est.': f"{int(round(ceiling - r['Avg. Salary (AVG)'])):+d}",
+            'Fallback': altname,
+        })
+
+    tgt_rows = []
+    for _, p in avail.iterrows():
+        opts = [s for s in weakest_starter if p['Pos'] in slot_positions(s)]
+        if not opts:
+            continue
+        s = max(opts, key=lambda s: p['Proj 23'] - weakest_starter[s]['Proj 23'])
+        w = weakest_starter[s]
+        target = w['Avg. Salary (AVG)'] + (p['Proj 23'] - w['Proj 23']) * dollars_per_point
+        tgt_rows.append({
+            'Player': p['Player'], 'Pos': p['Pos'],
+            'Proj': round(float(p['Proj 23']), 1),
+            'Est. $': int(round(p['Avg. Salary (AVG)'])),
+            'Buy at/below $': int(np.floor(target)),
+            'Bumps': w['Player'],
+        })
+    ceilings = pd.DataFrame(ceil_rows)
+    targets = pd.DataFrame(tgt_rows)
+    if not targets.empty:
+        targets = (targets[targets['Buy at/below $'] >= 1]
+                   .sort_values('Proj', ascending=False).reset_index(drop=True))
+    return ceilings, targets
+
 
 # Button to run the program
+show_bids = st.checkbox(
+    "Advanced: show max bid per rostered player and target price for the rest",
+    value=False)
+
 if st.button('Run Program'):
     # Process data based on inputs
-    result_df, points_game, spent_budget = run_optimizer(roster_data, scoring, players_df, adjustments=ADJUSTMENTS)
+    (result_df, points_game, spent_budget,
+     _pool, _lam, _avail_budget, _bench) = run_optimizer(
+        roster_data, scoring, players_df, adjustments=ADJUSTMENTS)
+
+    roster_for_bids = result_df.copy()   # keep original column names for bid_analysis
 
     # Add the sum row to the DataFrame
     result_df = result_df.rename(columns={"Proj 23": "Projected Points"})
@@ -369,6 +462,26 @@ if st.button('Run Program'):
     st.dataframe(results_sorted, width=700, height=400)
     st.write(f'Points per Game: {points_game:.2f}')
     st.write(f'Budget Spent: {spent_budget}')
+
+    if show_bids:
+        st.markdown("### Advanced: auction bid guidance")
+        one_player_cap = 200 - _bench - (int(roster_data['Number'].sum()) - 1)
+        ceilings, targets = bid_analysis(roster_for_bids, _pool, _lam, one_player_cap)
+        if ceilings is None:
+            st.info("Not enough optimizer movement to estimate bid values this run.")
+        else:
+            st.caption(
+                f"Marginal value at this roster: ~${1/_lam:,.1f} per projected point "
+                f"(1 extra $ buys ~{_lam:,.2f} pts). Numbers are guidance, not hard limits."
+            )
+            st.markdown("**Players you drafted — how high you can go**")
+            st.caption("Max bid = the price at which the best still-available "
+                       "replacement at that slot becomes the smarter buy.")
+            st.dataframe(ceilings, hide_index=True, width=700)
+            st.markdown("**Players you didn't draft — when they become worth it**")
+            st.caption("Buy at/below = the price at which this player would bump "
+                       "your weakest starter at his position.")
+            st.dataframe(targets, hide_index=True, width=700, height=430)
  
 
 
